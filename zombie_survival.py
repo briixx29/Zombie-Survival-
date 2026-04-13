@@ -22,6 +22,22 @@ BASE_DIR = os.path.dirname(__file__)
 IMG_PATH = os.path.join(BASE_DIR, "assets", "images")
 SND_PATH = os.path.join(BASE_DIR, "assets", "sounds")
 
+# ---------------- HIGH SCORE ----------------
+HIGH_SCORE_FILE = os.path.join(BASE_DIR, "highscore.txt")
+
+def load_highscore():
+    if os.path.exists(HIGH_SCORE_FILE):
+        with open(HIGH_SCORE_FILE, "r") as f:
+            try:
+                return int(f.read())
+            except:
+                return 0
+    return 0
+
+def save_highscore(score):
+    with open(HIGH_SCORE_FILE, "w") as f:
+        f.write(str(score))
+
 # ---------------- FONTS ----------------
 title_font = pygame.font.SysFont("arialblack", 85)
 ui_font = pygame.font.SysFont("arialblack", 45)
@@ -63,17 +79,16 @@ bg_img = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "background.png")), (WIDTH, HEIGHT)
 )
 
-# ONE zombie image (facing RIGHT)
 zombie_img = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "zombie.png")).convert_alpha(), (60, 60)
 )
 
 heal_img = pygame.transform.scale(
-    pygame.image.load(os.path.join(IMG_PATH, "heal.png")).convert_alpha(), (35, 35)
+    pygame.image.load(os.path.join(IMG_PATH, "heal.png")).convert_alpha(), (45, 45)
 )
 
 speed_img = pygame.transform.scale(
-    pygame.image.load(os.path.join(IMG_PATH, "speed.png")).convert_alpha(), (35, 35)
+    pygame.image.load(os.path.join(IMG_PATH, "speed.png")).convert_alpha(), (45, 45)
 )
 
 characters = {
@@ -151,6 +166,7 @@ running = True
 while running:
 
     player_img = character_select()
+    high_score = load_highscore()
 
     pygame.mixer.music.stop()
     pygame.mixer.music.load(game_music)
@@ -176,6 +192,7 @@ while running:
             final_time = (pygame.time.get_ticks() - state["start_time"]) // 1000
 
         draw_text_topright(f"TIME: {final_time}s", ui_font, WHITE, WIDTH-20, 20)
+        draw_text_topright(f"HIGH SCORE: {high_score}s", small_font, WHITE, WIDTH-20, 80)
 
         if not state["game_over"]:
 
@@ -204,7 +221,6 @@ while running:
 
             player_rect = pygame.Rect(state["player_x"], state["player_y"], player_size, player_size)
 
-            # 🧟 ZOMBIES (WITH FLIP)
             for zombie in state["zombies"]:
                 dx = state["player_x"] - zombie[0]
                 dy = state["player_y"] - zombie[1]
@@ -212,7 +228,6 @@ while running:
                 zombie[0] += dx * 0.01 * zombie_speed
                 zombie[1] += dy * 0.01 * zombie_speed
 
-                # FLIP IMAGE
                 if dx < 0:
                     img = pygame.transform.flip(zombie_img, True, False)
                 else:
@@ -224,7 +239,6 @@ while running:
 
                 screen.blit(img, zombie)
 
-            # ITEMS
             for item in state["items"][:]:
                 rect = pygame.Rect(item["pos"][0], item["pos"][1], 35, 35)
 
@@ -255,6 +269,11 @@ while running:
         else:
             draw_text_center("GAME OVER", title_font, RED, (WIDTH//2, HEIGHT//2 - 140))
             draw_text_center(f"You survived: {final_time}s", ui_font, WHITE, (WIDTH//2, HEIGHT//2))
+
+            if final_time > high_score:
+                high_score = final_time
+                save_highscore(high_score)
+
             draw_text_center("Press R to Return to Menu", small_font, WHITE, (WIDTH//2, HEIGHT//2 + 90))
 
         pygame.display.update()
