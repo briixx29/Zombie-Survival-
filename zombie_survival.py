@@ -78,7 +78,7 @@ speed_img = pygame.transform.scale(
 
 characters = {
     f"c{i}": pygame.transform.scale(
-        pygame.image.load(os.path.join(IMG_PATH, f"char{i}.png")), (70, 70)
+        pygame.image.load(os.path.join(IMG_PATH, f"char{i}.png")), (80, 70)
     )
     for i in range(1, 8)
 }
