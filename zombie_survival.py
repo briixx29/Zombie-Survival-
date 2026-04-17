@@ -306,8 +306,8 @@ while running:
                 state["elapsed_ms"] += dt
             final_time = state["elapsed_ms"] // 1000
 
-        draw_text_topright(f"TIME: {final_time}s", small_font, WHITE, WIDTH-20, 20)
-        draw_text_topright(f"HIGH SCORE: {high_score}s", small_font, WHITE, WIDTH-20, 60)
+        draw_text_topright(f"TIME: {final_time}s", small_font, WHITE, WIDTH-20, 60)
+        draw_text_topright(f"HIGH SCORE: {high_score}s", small_font, WHITE, WIDTH-20, 20)
 
         if state["endgame_choice"]:
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
