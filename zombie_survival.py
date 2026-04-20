@@ -6,6 +6,7 @@ import os
 # ---------------- INIT ----------------
 pygame.init()
 pygame.mixer.init()
+pygame.mixer.set_num_channels(32)
 
 WIDTH, HEIGHT = 1200, 700
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -43,6 +44,7 @@ def save_highscore(score):
 title_font = pygame.font.SysFont("arialblack", 85)
 ui_font = pygame.font.SysFont("arialblack", 45)
 small_font = pygame.font.SysFont("consolas", 32)
+mini_font = pygame.font.SysFont("consolas", 20)
 
 # ---------------- TEXT ----------------
 def draw_text_center(text, font, color, center):
@@ -89,6 +91,11 @@ try:
     shot_sound = pygame.mixer.Sound(os.path.join(SND_PATH, "gun_shot.mp3"))
 except:
     shot_sound = None
+
+try:
+    gameover_sound = pygame.mixer.Sound(os.path.join(SND_PATH, "gameover.mp3"))
+except:
+    gameover_sound = None
 
 # ---------------- IMAGES ----------------
 menu_bg = pygame.transform.scale(
@@ -185,6 +192,109 @@ characters = {
 player_size = 65
 base_speed = 6
 zombie_speed = 2.6
+global_volume = 1.0
+
+def update_volume():
+    pygame.mixer.music.set_volume(global_volume)
+    hit_sound.set_volume(global_volume)
+    heal_sound.set_volume(global_volume)
+    speed_sound.set_volume(global_volume)
+    if ejeep_sound: ejeep_sound.set_volume(global_volume)
+    if shot_sound: shot_sound.set_volume(global_volume)
+    if gameover_sound: gameover_sound.set_volume(global_volume)
+
+def settings_menu():
+    global global_volume
+    in_settings = True
+    while in_settings:
+        screen.blit(menu_bg, (0, 0))
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        screen.blit(overlay, (0, 0))
+
+        draw_text_center("SETTINGS AND CONTROLS", ui_font, WHITE, (WIDTH//2, 100))
+        
+        # Volume
+        draw_text_center(f"VOLUME: {int(global_volume * 100)}%", small_font, WHITE, (WIDTH//2, 220))
+        
+        minus_rect = pygame.Rect(WIDTH//2 - 200, 190, 60, 60)
+        plus_rect = pygame.Rect(WIDTH//2 + 140, 190, 60, 60)
+        
+        mpos = pygame.mouse.get_pos()
+        pygame.draw.rect(screen, (100, 100, 100) if minus_rect.collidepoint(mpos) else (80, 80, 80), minus_rect, border_radius=10)
+        pygame.draw.rect(screen, (100, 100, 100) if plus_rect.collidepoint(mpos) else (80, 80, 80), plus_rect, border_radius=10)
+        
+        draw_text_center("-", ui_font, WHITE, (WIDTH//2 - 170, 220))
+        draw_text_center("+", ui_font, WHITE, (WIDTH//2 + 170, 220))
+        
+        # Controls
+        controls_rect = pygame.Rect(WIDTH//2 - 400, 300, 800, 200)
+        pygame.draw.rect(screen, (30, 30, 30), controls_rect, border_radius=15)
+        pygame.draw.rect(screen, (150, 150, 150), controls_rect, 2, border_radius=15)
+        
+        draw_text_center("CONTROLS", small_font, GREEN, (WIDTH//2, 330))
+        draw_text_center("WASD or Arrows - Move character around the map.", mini_font, WHITE, (WIDTH//2, 380))
+        draw_text_center("Auto Attack - Automatically fires gun bullets at zombies/boss.", mini_font, WHITE, (WIDTH//2, 420))
+        draw_text_center("Objective: Survive waves, grab items, enter portals, and defeat Bosses!", mini_font, (200, 200, 200), (WIDTH//2, 460))
+        
+        # Back
+        back_rect = pygame.Rect(WIDTH//2 - 100, 550, 200, 60)
+        
+        b_color = (150, 50, 50) if back_rect.collidepoint(mpos) else (100, 40, 40)
+        pygame.draw.rect(screen, b_color, back_rect, border_radius=10)
+        draw_text_center("BACK", ui_font, WHITE, (WIDTH//2, 580))
+
+        pygame.display.update()
+
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if back_rect.collidepoint(event.pos):
+                    in_settings = False
+                elif minus_rect.collidepoint(event.pos):
+                    global_volume = max(0.0, global_volume - 0.1)
+                    update_volume()
+                elif plus_rect.collidepoint(event.pos):
+                    global_volume = min(1.0, global_volume + 0.1)
+                    update_volume()
+
+def main_menu():
+    update_volume()
+    pygame.mixer.music.load(menu_music)
+    pygame.mixer.music.play(-1)
+    
+    while True:
+        screen.blit(menu_bg, (0, 0))
+        
+        draw_text_center("ZOMBIE SURVIVAL", title_font, RED, (WIDTH//2, 180))
+        
+        play_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
+        settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
+        quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        
+        mpos = pygame.mouse.get_pos()
+        
+        pygame.draw.rect(screen, (50, 150, 50) if play_rect.collidepoint(mpos) else (30, 100, 30), play_rect, border_radius=15)
+        pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
+        pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
+        
+        draw_text_center("PLAY", ui_font, WHITE, (WIDTH//2, 340))
+        draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
+        draw_text_center("QUIT", ui_font, WHITE, (WIDTH//2, 580))
+        
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); exit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if play_rect.collidepoint(event.pos):
+                    return "play"
+                elif settings_rect.collidepoint(event.pos):
+                    settings_menu()
+                elif quit_rect.collidepoint(event.pos):
+                    pygame.quit(); exit()
 
 # ---------------- CHARACTER SELECT ----------------
 def character_select():
@@ -270,6 +380,10 @@ running = True
 
 while running:
 
+    action = main_menu()
+    if action == "quit":
+        break
+
     player_img = character_select()
     high_score = load_highscore()
 
@@ -340,6 +454,7 @@ while running:
                 state["endgame_choice"] = False
             elif keys[pygame.K_e]:
                 state["stage"] = "endless"
+                state["zombies"] = []
                 state["endgame_choice"] = False
 
         elif not state["game_over"]:
@@ -457,7 +572,7 @@ while running:
                         state["speed_boost_end"] = current_ticks + 5000
                         speed_sound.play()
                     elif item["type"] == "gun":
-                        state["gun_end"] = current_ticks + random.randint(5000, 10000)
+                        state["gun_end"] = current_ticks + 9000
                         speed_sound.play()
                     elif item["type"] == "shield":
                         state["shield_end"] = current_ticks + random.randint(5000, 10000)
@@ -527,7 +642,6 @@ while running:
                     state["lasers"].append({"start": (state["player_x"]+player_size//2, state["player_y"]+player_size//2), "end": (bx+75, by+75), "time": current_ticks})
                     state["boss_health"] -= 15
                     state["last_shot"] = current_ticks
-                    if shot_sound: shot_sound.play()
 
                 pygame.draw.rect(screen, RED, (WIDTH//2 - 200, 20, 400, 20))
                 pygame.draw.rect(screen, GREEN, (WIDTH//2 - 200, 20, max(0, state["boss_health"])*0.4, 20))
@@ -544,7 +658,11 @@ while running:
                     state["lasers"].append({"start": (px, py), "end": (closest_zombie[0] + 30, closest_zombie[1] + 30), "time": current_ticks})
                     state["zombies"].remove(closest_zombie)
                     state["last_shot"] = current_ticks
-                    if shot_sound: shot_sound.play()
+                    if shot_sound: 
+                        shot_sound.stop()
+                        shot_sound.play()
+            else:
+                if shot_sound: shot_sound.stop()
 
             # Draw lasers
             for laser in state["lasers"][:]:
@@ -565,6 +683,8 @@ while running:
             if state["health"] <= 0:
                 state["game_over"] = True
                 pygame.mixer.music.stop()
+                pygame.mixer.stop()
+                if gameover_sound: gameover_sound.play()
 
         else:
             if state.get("win"):
