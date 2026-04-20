@@ -75,6 +75,7 @@ def draw_text_topleft(text, font, color, x, y):
     screen.blit(base, rect)
 
 # ---------------- SOUND ----------------
+main_menu_music = os.path.join(SND_PATH, "mainMenu_sound.mp3")
 menu_music = os.path.join(SND_PATH, "menu_music.mp3")
 game_music = os.path.join(SND_PATH, "game_music.mp3")
 
@@ -261,7 +262,10 @@ def settings_menu():
 
 def main_menu():
     update_volume()
-    pygame.mixer.music.load(menu_music)
+    try:
+        pygame.mixer.music.load(main_menu_music)
+    except:
+        pygame.mixer.music.load(menu_music)
     pygame.mixer.music.play(-1)
     
     while True:
