@@ -420,7 +420,7 @@ while running:
         state["last_ticks"] = current_ticks
 
         if not state["game_over"] and not state["endgame_choice"]:
-            if not state["portal_active"] and not state["boss_active"]:
+            if not state["portal_active"]:
                 state["elapsed_ms"] += dt
             final_time = state["elapsed_ms"] // 1000
 
@@ -442,21 +442,21 @@ while running:
             btn1_rect = pygame.Rect(WIDTH//2 - 350, HEIGHT//2 + 30, 300, 120)
             pygame.draw.rect(screen, (40, 100, 40), btn1_rect, border_radius=10)
             pygame.draw.rect(screen, (100, 255, 100), btn1_rect, 2, border_radius=10)
-            draw_text_center("Press W", ui_font, WHITE, (WIDTH//2 - 200, HEIGHT//2 + 70))
+            draw_text_center("Press 1", ui_font, WHITE, (WIDTH//2 - 200, HEIGHT//2 + 70))
             draw_text_center("VICTORY (MENU)", small_font, (200, 255, 200), (WIDTH//2 - 200, HEIGHT//2 + 120))
 
             btn2_rect = pygame.Rect(WIDTH//2 + 50, HEIGHT//2 + 30, 300, 120)
             pygame.draw.rect(screen, (100, 40, 40), btn2_rect, border_radius=10)
             pygame.draw.rect(screen, (255, 100, 100), btn2_rect, 2, border_radius=10)
-            draw_text_center("Press E", ui_font, WHITE, (WIDTH//2 + 200, HEIGHT//2 + 70))
+            draw_text_center("Press 2", ui_font, WHITE, (WIDTH//2 + 200, HEIGHT//2 + 70))
             draw_text_center("ENTER ENDLESS", small_font, (255, 200, 200), (WIDTH//2 + 200, HEIGHT//2 + 120))
 
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_w]:
+            if keys[pygame.K_1]:
                 state["game_over"] = True
                 state["win"] = True
                 state["endgame_choice"] = False
-            elif keys[pygame.K_e]:
+            elif keys[pygame.K_2]:
                 state["stage"] = "endless"
                 state["zombies"] = []
                 state["endgame_choice"] = False
@@ -653,6 +653,7 @@ while running:
                 if state["boss_health"] <= 0:
                     state["boss_active"] = False
                     state["endgame_choice"] = True
+                    state["zombies"] = []
 
             # Auto aim gun logic
             if current_ticks < state["gun_end"]:
