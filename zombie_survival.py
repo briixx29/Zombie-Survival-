@@ -98,10 +98,22 @@ try:
 except:
     gameover_sound = None
 
+try:
+    boss_shot_sound = pygame.mixer.Sound(os.path.join(SND_PATH, "gunshot_boss.mp3"))
+except:
+    boss_shot_sound = None
+
 # ---------------- IMAGES ----------------
 menu_bg = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "menu_bg.png")), (WIDTH, HEIGHT)
 )
+
+try:
+    mainmenu_bg = pygame.transform.scale(
+        pygame.image.load(os.path.join(IMG_PATH, "mainmenu_bg.png")), (WIDTH, HEIGHT)
+    )
+except:
+    mainmenu_bg = menu_bg
 
 bg_img = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "background.png")), (WIDTH, HEIGHT)
@@ -203,6 +215,7 @@ def update_volume():
     if ejeep_sound: ejeep_sound.set_volume(global_volume)
     if shot_sound: shot_sound.set_volume(global_volume)
     if gameover_sound: gameover_sound.set_volume(global_volume)
+    if boss_shot_sound: boss_shot_sound.set_volume(global_volume)
 
 def settings_menu():
     global global_volume
@@ -314,7 +327,7 @@ def main_menu():
     pygame.mixer.music.play(-1)
     
     while True:
-        screen.blit(menu_bg, (0, 0))
+        screen.blit(mainmenu_bg, (0, 0))
         
         draw_text_center("ZOMBIE SURVIVAL", title_font, RED, (WIDTH//2, 180))
         
@@ -473,7 +486,7 @@ def spawn_item():
 running = True
 
 while running:
-
+    pygame.mixer.stop()
     action = main_menu()
     if action == "quit":
         break
@@ -750,10 +763,18 @@ while running:
                         state["health"] -= 0.6
                         hit_sound.play()
                 
-                if current_ticks - state["last_shot"] > 200:
-                    state["lasers"].append({"start": (state["player_x"]+player_size//2, state["player_y"]+player_size//2), "end": (bx+75, by+75), "time": current_ticks})
-                    state["boss_health"] -= 15
-                    state["last_shot"] = current_ticks
+                if current_ticks < state["gun_end"]:
+                    if current_ticks - state["last_shot"] > 200:
+                        state["lasers"].append({"start": (state["player_x"]+player_size//2, state["player_y"]+player_size//2), "end": (bx+75, by+75), "time": current_ticks})
+                        state["boss_health"] -= 15
+                        state["last_shot"] = current_ticks
+                    if not state.get("boss_gun_playing"):
+                        if boss_shot_sound: boss_shot_sound.play(-1)
+                        state["boss_gun_playing"] = True
+                else:
+                    if state.get("boss_gun_playing"):
+                        if boss_shot_sound: boss_shot_sound.stop()
+                        state["boss_gun_playing"] = False
 
                 pygame.draw.rect(screen, RED, (WIDTH//2 - 200, 20, 400, 20))
                 pygame.draw.rect(screen, GREEN, (WIDTH//2 - 200, 20, max(0, state["boss_health"])*0.4, 20))
@@ -762,6 +783,9 @@ while running:
                     state["boss_active"] = False
                     state["endgame_choice"] = True
                     state["zombies"] = []
+                    if state.get("boss_gun_playing"):
+                        if boss_shot_sound: boss_shot_sound.stop()
+                        state["boss_gun_playing"] = False
 
             # Auto aim gun logic
             if current_ticks < state["gun_end"]:
