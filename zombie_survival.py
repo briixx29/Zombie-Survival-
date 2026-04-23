@@ -229,14 +229,15 @@ def settings_menu():
         draw_text_center("+", ui_font, WHITE, (WIDTH//2 + 170, 220))
         
         # Controls
-        controls_rect = pygame.Rect(WIDTH//2 - 400, 300, 800, 200)
+        controls_rect = pygame.Rect(WIDTH//2 - 400, 290, 800, 240)
         pygame.draw.rect(screen, (30, 30, 30), controls_rect, border_radius=15)
         pygame.draw.rect(screen, (150, 150, 150), controls_rect, 2, border_radius=15)
         
-        draw_text_center("CONTROLS", small_font, GREEN, (WIDTH//2, 330))
-        draw_text_center("WASD or Arrows - Move character around the map.", mini_font, WHITE, (WIDTH//2, 380))
-        draw_text_center("Auto Attack - Automatically fires gun bullets at zombies/boss.", mini_font, WHITE, (WIDTH//2, 420))
-        draw_text_center("Objective: Survive waves, grab items, enter portals, and defeat Bosses!", mini_font, (200, 200, 200), (WIDTH//2, 460))
+        draw_text_center("CONTROLS", small_font, GREEN, (WIDTH//2, 320))
+        draw_text_center("WASD or Arrows - Move character around the map.", mini_font, WHITE, (WIDTH//2, 360))
+        draw_text_center("Auto Attack - Automatically fires gun bullets at zombies/boss.", mini_font, WHITE, (WIDTH//2, 395))
+        draw_text_center("ESC - Pause the Game.", mini_font, WHITE, (WIDTH//2, 430))
+        draw_text_center("Objective: Survive waves, grab items, enter portals, and defeat Boss!", mini_font, (200, 200, 200), (WIDTH//2, 465))
         
         # Back
         back_rect = pygame.Rect(WIDTH//2 - 100, 550, 200, 60)
@@ -259,6 +260,50 @@ def settings_menu():
                 elif plus_rect.collidepoint(event.pos):
                     global_volume = min(1.0, global_volume + 0.1)
                     update_volume()
+
+def pause_menu():
+    pygame.mixer.music.pause()
+    bg_surface = screen.copy()
+    paused = True
+    while paused:
+        screen.blit(bg_surface, (0, 0))
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
+        screen.blit(overlay, (0, 0))
+        
+        draw_text_center("PAUSED", title_font, RED, (WIDTH//2, 180))
+        
+        resume_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
+        settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
+        quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        
+        mpos = pygame.mouse.get_pos()
+        
+        pygame.draw.rect(screen, (50, 150, 50) if resume_rect.collidepoint(mpos) else (30, 100, 30), resume_rect, border_radius=15)
+        pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
+        pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
+        
+        draw_text_center("RESUME", ui_font, WHITE, (WIDTH//2, 340))
+        draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
+        draw_text_center("QUIT TO MENU", small_font, WHITE, (WIDTH//2, 580))
+        
+        pygame.display.update()
+        
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit(); exit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.mixer.music.unpause()
+                    return "resume"
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if resume_rect.collidepoint(event.pos):
+                    pygame.mixer.music.unpause()
+                    return "resume"
+                elif settings_rect.collidepoint(event.pos):
+                    settings_menu()
+                elif quit_rect.collidepoint(event.pos):
+                    return "quit"
 
 def main_menu():
     update_volume()
@@ -414,6 +459,24 @@ while running:
                 game_running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 game_running = False
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if not state.get("game_over") and not state.get("endgame_choice"):
+                    pause_start = pygame.time.get_ticks()
+                    action = pause_menu()
+                    if action == "quit":
+                        game_running = False
+                        break
+                    
+                    pause_duration = pygame.time.get_ticks() - pause_start
+                    state["speed_boost_end"] += pause_duration
+                    state["shield_end"] += pause_duration
+                    state["gun_end"] += pause_duration
+                    state["last_shot"] += pause_duration
+                    state["last_ticks"] += pause_duration
+                    state["last_boss_gun_spawn"] += pause_duration
+                    state["start_time"] += pause_duration
+                    for laser in state["lasers"]:
+                        laser["time"] += pause_duration
 
         current_ticks = pygame.time.get_ticks()
         dt = current_ticks - state["last_ticks"]
