@@ -349,21 +349,61 @@ def main_menu():
 def character_select():
     selected = None
     keys = list(characters.keys())
+    char_names = ["Survivor", "Ranger", "Soldier", "Medic", "Sniper", "Heavy", "Ninja"]
 
     pygame.mixer.music.load(menu_music)
     pygame.mixer.music.play(-1)
 
     while selected is None:
         screen.blit(menu_bg, (0, 0))
+        
+        # Add a subtle dark overlay for better contrast
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 150))
+        screen.blit(overlay, (0, 0))
 
-        draw_text_center("CHOOSE YOUR CHARACTER", ui_font, WHITE, (WIDTH//2, 100))
-        draw_text_center("Press 1 - 7 to Select", small_font, WHITE, (WIDTH//2, 600))
+        draw_text_center("CHOOSE YOUR CHARACTER", title_font, RED, (WIDTH//2, 120))
+        draw_text_center("Click or Press 1 - 7 to Select", small_font, (200, 200, 200), (WIDTH//2, 620))
 
-        spacing = 120
-        start_x = WIDTH//2 - (len(keys)*spacing)//2
+        spacing = 140
+        start_x = WIDTH//2 - (len(keys) * spacing) // 2 + (spacing // 2)
+        mpos = pygame.mouse.get_pos()
+        
+        char_rects = []
 
         for i, key in enumerate(keys):
-            screen.blit(characters[key], (start_x + i*spacing, 300))
+            cx = start_x + i * spacing
+            cy = HEIGHT // 2 + 30
+            
+            # Character card rect
+            card_rect = pygame.Rect(0, 0, 120, 180)
+            card_rect.center = (cx, cy)
+            char_rects.append((card_rect, key))
+            
+            is_hovered = card_rect.collidepoint(mpos)
+            
+            # Draw card background
+            bg_color = (80, 80, 80) if is_hovered else (40, 40, 40)
+            pygame.draw.rect(screen, bg_color, card_rect, border_radius=15)
+            
+            # Draw border
+            border_color = GREEN if is_hovered else (150, 150, 150)
+            border_width = 4 if is_hovered else 2
+            pygame.draw.rect(screen, border_color, card_rect, border_width, border_radius=15)
+            
+            # Draw character sprite
+            char_img = characters[key]
+            if is_hovered:
+                # Slight scale up on hover
+                char_img = pygame.transform.scale(char_img, (90, 80))
+            
+            img_rect = char_img.get_rect(center=(cx, cy - 25))
+            screen.blit(char_img, img_rect)
+            
+            # Draw character name and number
+            name_color = WHITE if is_hovered else (180, 180, 180)
+            draw_text_center(char_names[i], mini_font, name_color, (cx, cy + 40))
+            draw_text_center(f"[{i+1}]", mini_font, (200, 200, 100), (cx, cy + 65))
 
         pygame.display.update()
 
@@ -373,6 +413,11 @@ def character_select():
             if event.type == pygame.KEYDOWN:
                 if pygame.K_1 <= event.key <= pygame.K_7:
                     selected = characters[f"c{event.key - pygame.K_0}"]
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if event.button == 1: # Left click
+                    for rect, key in char_rects:
+                        if rect.collidepoint(event.pos):
+                            selected = characters[key]
 
     return selected
 
