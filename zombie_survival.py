@@ -349,7 +349,7 @@ def main_menu():
 def character_select():
     selected = None
     keys = list(characters.keys())
-    char_names = ["Survivor", "Ranger", "Soldier", "Medic", "Sniper", "Heavy", "Ninja"]
+    char_names = ["Brix", "Paul", "Ashley", "Hendrix", "Benedict", "Ethan", "Alvin"]
 
     pygame.mixer.music.load(menu_music)
     pygame.mixer.music.play(-1)
@@ -362,7 +362,7 @@ def character_select():
         overlay.fill((0, 0, 0, 150))
         screen.blit(overlay, (0, 0))
 
-        draw_text_center("CHOOSE YOUR CHARACTER", title_font, RED, (WIDTH//2, 120))
+        draw_text_center("CHOOSE YOUR CHARACTER", ui_font, RED, (WIDTH//2, 120))
         draw_text_center("Click or Press 1 - 7 to Select", small_font, (200, 200, 200), (WIDTH//2, 620))
 
         spacing = 140
