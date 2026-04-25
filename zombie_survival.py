@@ -105,6 +105,11 @@ try:
 except:
     boss_shot_sound = None
 
+try:
+    button_click_sound = pygame.mixer.Sound(os.path.join(SND_PATH, "button_click.mp3"))
+except:
+    button_click_sound = None
+
 # ---------------- IMAGES ----------------
 menu_bg = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "menu_bg.png")), (WIDTH, HEIGHT)
@@ -166,7 +171,7 @@ except:
         bg_img3.fill((20, 20, 50))
 
 zombie_img = pygame.transform.scale(
-    pygame.image.load(os.path.join(IMG_PATH, "zombie.png")).convert_alpha(), (60, 60)
+    pygame.image.load(os.path.join(IMG_PATH, "zombie.png")).convert_alpha(), (70, 70)
 )
 
 heal_img = pygame.transform.scale(
@@ -221,10 +226,24 @@ except:
 
 characters = {
     f"c{i}": pygame.transform.scale(
-        pygame.image.load(os.path.join(IMG_PATH, f"char{i}.png")), (80, 70)
+        pygame.image.load(os.path.join(IMG_PATH, f"char{i}.png")), (60, 80)
     )
     for i in range(1, 8)
 }
+
+avatars = {}
+avatars_hover = {}
+for i in range(1, 8):
+    try:
+        img = pygame.image.load(os.path.join(IMG_PATH, f"avatar{i}.png")).convert_alpha()
+        w, h = img.get_size()
+        scale_normal = min(100 / w, 100 / h)
+        scale_hover = min(115 / w, 115 / h)
+        avatars[f"c{i}"] = pygame.transform.smoothscale(img, (int(w * scale_normal), int(h * scale_normal)))
+        avatars_hover[f"c{i}"] = pygame.transform.smoothscale(img, (int(w * scale_hover), int(h * scale_hover)))
+    except:
+        avatars[f"c{i}"] = characters[f"c{i}"]
+        avatars_hover[f"c{i}"] = pygame.transform.scale(characters[f"c{i}"], (70, 90))
 
 # ---------------- SETTINGS ----------------
 player_size = 65
@@ -241,6 +260,7 @@ def update_volume():
     if shot_sound: shot_sound.set_volume(global_volume)
     if gameover_sound: gameover_sound.set_volume(global_volume)
     if boss_shot_sound: boss_shot_sound.set_volume(global_volume)
+    if button_click_sound: button_click_sound.set_volume(global_volume)
 
 def settings_menu():
     global global_volume
@@ -291,11 +311,14 @@ def settings_menu():
                 pygame.quit(); exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if back_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     in_settings = False
                 elif minus_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     global_volume = max(0.0, global_volume - 0.1)
                     update_volume()
                 elif plus_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     global_volume = min(1.0, global_volume + 0.1)
                     update_volume()
 
@@ -336,11 +359,14 @@ def pause_menu():
                     return "resume"
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if resume_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     pygame.mixer.music.unpause()
                     return "resume"
                 elif settings_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     settings_menu()
                 elif quit_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     return "quit"
 
 def main_menu():
@@ -441,9 +467,11 @@ def main_menu():
                 pygame.quit(); exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     if cap: cap.release()
                     return "play"
                 elif settings_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     if cap: cap.release()
                     settings_menu()
                     try:
@@ -451,6 +479,7 @@ def main_menu():
                     except:
                         cap = None
                 elif quit_rect.collidepoint(event.pos):
+                    if button_click_sound: button_click_sound.play()
                     if cap: cap.release()
                     pygame.quit(); exit()
 
@@ -501,13 +530,13 @@ def character_select():
             pygame.draw.rect(screen, border_color, card_rect, border_width, border_radius=15)
             
             # Draw character sprite
-            char_img = characters[key]
             if is_hovered:
-                # Slight scale up on hover
-                char_img = pygame.transform.scale(char_img, (90, 80))
+                display_img = avatars_hover[key]
+            else:
+                display_img = avatars[key]
             
-            img_rect = char_img.get_rect(center=(cx, cy - 25))
-            screen.blit(char_img, img_rect)
+            img_rect = display_img.get_rect(center=(cx, cy - 25))
+            screen.blit(display_img, img_rect)
             
             # Draw character name and number
             name_color = WHITE if is_hovered else (180, 180, 180)
@@ -521,11 +550,13 @@ def character_select():
                 pygame.quit(); exit()
             if event.type == pygame.KEYDOWN:
                 if pygame.K_1 <= event.key <= pygame.K_7:
+                    if button_click_sound: button_click_sound.play()
                     selected = characters[f"c{event.key - pygame.K_0}"]
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if event.button == 1: # Left click
                     for rect, key in char_rects:
                         if rect.collidepoint(event.pos):
+                            if button_click_sound: button_click_sound.play()
                             selected = characters[key]
 
     return selected
@@ -918,7 +949,7 @@ while running:
             screen.blit(p_img, (state["player_x"], state["player_y"]))
             
             if pygame.time.get_ticks() < state["shield_end"]:
-                pygame.draw.circle(screen, (100, 200, 255), (int(state["player_x"] + 40), int(state["player_y"] + 35)), 50, 4)
+                pygame.draw.circle(screen, (100, 200, 255), (int(state["player_x"] + 30), int(state["player_y"] + 40)), 50, 4)
 
             pygame.draw.rect(screen, WHITE, (10,10,220,25))
             pygame.draw.rect(screen, GREEN, (10,10,state["health"]*2.2,25))
