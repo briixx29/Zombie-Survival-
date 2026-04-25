@@ -2,6 +2,8 @@ import pygame
 import random
 import math
 import os
+import cv2
+import numpy as np
 
 # ---------------- INIT ----------------
 pygame.init()
@@ -114,6 +116,29 @@ try:
     )
 except:
     mainmenu_bg = menu_bg
+
+def scale_img_by_factor(img, factor):
+    if img:
+        w, h = img.get_size()
+        return pygame.transform.scale(img, (int(w * factor), int(h * factor)))
+    return None
+
+try:
+    title_img = pygame.image.load(os.path.join(IMG_PATH, "ZOMBIE SURVIVAL.png")).convert_alpha()
+    title_img = scale_img_by_factor(title_img, 1.5)
+except:
+    title_img = None
+
+try:
+    play_btn_img = pygame.image.load(os.path.join(IMG_PATH, "PLAY.png")).convert_alpha()
+    settings_btn_img = pygame.image.load(os.path.join(IMG_PATH, "SETTINGS.png")).convert_alpha()
+    quit_btn_img = pygame.image.load(os.path.join(IMG_PATH, "QUIT.png")).convert_alpha()
+    
+    play_btn_img = scale_img_by_factor(play_btn_img, 1.4)
+    settings_btn_img = scale_img_by_factor(settings_btn_img, 1.4)
+    quit_btn_img = scale_img_by_factor(quit_btn_img, 1.4)
+except:
+    play_btn_img = settings_btn_img = quit_btn_img = None
 
 bg_img = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "background.png")), (WIDTH, HEIGHT)
@@ -326,36 +351,107 @@ def main_menu():
         pygame.mixer.music.load(menu_music)
     pygame.mixer.music.play(-1)
     
+    # Initialize video capture
+    video_path = os.path.join(IMG_PATH, "MainMenu bg.mp4")
+    try:
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps == 0: fps = 30
+    except:
+        cap = None
+        fps = 30
+
+    menu_clock = pygame.time.Clock()
+    
     while True:
-        screen.blit(mainmenu_bg, (0, 0))
+        # Video background
+        if cap and cap.isOpened():
+            success, frame = cap.read()
+            if not success:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                success, frame = cap.read()
+            if success:
+                frame = cv2.resize(frame, (WIDTH, HEIGHT))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = np.transpose(frame, (1, 0, 2))
+                surface = pygame.surfarray.make_surface(frame)
+                screen.blit(surface, (0, 0))
+            else:
+                screen.blit(mainmenu_bg, (0, 0))
+        else:
+            screen.blit(mainmenu_bg, (0, 0))
         
-        draw_text_center("ZOMBIE SURVIVAL", title_font, RED, (WIDTH//2, 180))
-        
-        play_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
-        settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
-        quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        # Title
+        if title_img:
+            t_w, t_h = title_img.get_size()
+            screen.blit(title_img, (WIDTH//2 - t_w//2, 80))
+        else:
+            draw_text_center("ZOMBIE SURVIVAL", title_font, RED, (WIDTH//2, 180))
         
         mpos = pygame.mouse.get_pos()
         
-        pygame.draw.rect(screen, (50, 150, 50) if play_rect.collidepoint(mpos) else (30, 100, 30), play_rect, border_radius=15)
-        pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
-        pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
-        
-        draw_text_center("PLAY", ui_font, WHITE, (WIDTH//2, 340))
-        draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
-        draw_text_center("QUIT", ui_font, WHITE, (WIDTH//2, 580))
+        # Play Button
+        play_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
+        if play_btn_img:
+            btn_w, btn_h = play_btn_img.get_size()
+            play_rect = pygame.Rect(WIDTH//2 - btn_w//2, 300, btn_w, btn_h)
+            if play_rect.collidepoint(mpos):
+                hover_img = pygame.transform.scale(play_btn_img, (int(btn_w*1.05), int(btn_h*1.05)))
+                screen.blit(hover_img, (WIDTH//2 - int(btn_w*1.05)//2, 300 - int(btn_h*0.025)))
+            else:
+                screen.blit(play_btn_img, (play_rect.x, play_rect.y))
+        else:
+            pygame.draw.rect(screen, (50, 150, 50) if play_rect.collidepoint(mpos) else (30, 100, 30), play_rect, border_radius=15)
+            draw_text_center("PLAY", ui_font, WHITE, (WIDTH//2, 340))
+            
+        # Settings Button
+        settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
+        if settings_btn_img:
+            btn_w, btn_h = settings_btn_img.get_size()
+            settings_rect = pygame.Rect(WIDTH//2 - btn_w//2, 420, btn_w, btn_h)
+            if settings_rect.collidepoint(mpos):
+                hover_img = pygame.transform.scale(settings_btn_img, (int(btn_w*1.05), int(btn_h*1.05)))
+                screen.blit(hover_img, (WIDTH//2 - int(btn_w*1.05)//2, 420 - int(btn_h*0.025)))
+            else:
+                screen.blit(settings_btn_img, (settings_rect.x, settings_rect.y))
+        else:
+            pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
+            draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
+            
+        # Quit Button
+        quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        if quit_btn_img:
+            btn_w, btn_h = quit_btn_img.get_size()
+            quit_rect = pygame.Rect(WIDTH//2 - btn_w//2, 540, btn_w, btn_h)
+            if quit_rect.collidepoint(mpos):
+                hover_img = pygame.transform.scale(quit_btn_img, (int(btn_w*1.05), int(btn_h*1.05)))
+                screen.blit(hover_img, (WIDTH//2 - int(btn_w*1.05)//2, 540 - int(btn_h*0.025)))
+            else:
+                screen.blit(quit_btn_img, (quit_rect.x, quit_rect.y))
+        else:
+            pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
+            draw_text_center("QUIT", ui_font, WHITE, (WIDTH//2, 580))
         
         pygame.display.update()
+        menu_clock.tick(fps)
         
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                if cap: cap.release()
                 pygame.quit(); exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_rect.collidepoint(event.pos):
+                    if cap: cap.release()
                     return "play"
                 elif settings_rect.collidepoint(event.pos):
+                    if cap: cap.release()
                     settings_menu()
+                    try:
+                        cap = cv2.VideoCapture(video_path)
+                    except:
+                        cap = None
                 elif quit_rect.collidepoint(event.pos):
+                    if cap: cap.release()
                     pygame.quit(); exit()
 
 # ---------------- CHARACTER SELECT ----------------
@@ -465,7 +561,9 @@ def reset_game():
         "last_boss_gun_spawn": pygame.time.get_ticks(),
         "start_time": pygame.time.get_ticks(),
         "game_over": False,
-        "win": False
+        "win": False,
+        "player_facing": "right",
+        "endless_start_ms": 0
     }
 
 def spawn_zombie():
@@ -581,6 +679,7 @@ while running:
                 state["stage"] = "endless"
                 state["zombies"] = []
                 state["endgame_choice"] = False
+                state["endless_start_ms"] = state["elapsed_ms"]
 
         elif not state["game_over"]:
 
@@ -591,8 +690,10 @@ while running:
             keys = pygame.key.get_pressed()
             if keys[pygame.K_a] or keys[pygame.K_LEFT]:
                 state["player_x"] -= speed
+                state["player_facing"] = "left"
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 state["player_x"] += speed
+                state["player_facing"] = "right"
             if keys[pygame.K_w] or keys[pygame.K_UP]:
                 state["player_y"] -= speed
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
@@ -634,7 +735,8 @@ while running:
                 if state["stage"] == 2: spawn_chance = 25
                 if state["stage"] == 3: spawn_chance = 35
                 if state["stage"] == "endless":
-                    spawn_chance = max(2, 20 - ((state["elapsed_ms"] - 160000) // 5000))
+                    time_in_endless = state["elapsed_ms"] - state["endless_start_ms"]
+                    spawn_chance = max(10, 35 - (time_in_endless // 10000))
                 
                 if random.randint(1, spawn_chance) == 1:
                     state["zombies"].append(spawn_zombie())
@@ -646,7 +748,8 @@ while running:
 
             zmb_spd = zombie_speed
             if state["stage"] == "endless":
-                zmb_spd += min(5.0, (state["elapsed_ms"] - 160000) / 15000.0)
+                time_in_endless = state["elapsed_ms"] - state["endless_start_ms"]
+                zmb_spd += min(2.0, time_in_endless / 25000.0)
 
             for zombie in state["zombies"]:
                 dx = state["player_x"] - zombie[0]
@@ -808,7 +911,11 @@ while running:
                 else:
                     state["lasers"].remove(laser)
 
-            screen.blit(player_img, (state["player_x"], state["player_y"]))
+            if state.get("player_facing") == "left":
+                p_img = pygame.transform.flip(player_img, True, False)
+            else:
+                p_img = player_img
+            screen.blit(p_img, (state["player_x"], state["player_y"]))
             
             if pygame.time.get_ticks() < state["shield_end"]:
                 pygame.draw.circle(screen, (100, 200, 255), (int(state["player_x"] + 40), int(state["player_y"] + 35)), 50, 4)
