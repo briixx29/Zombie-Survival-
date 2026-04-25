@@ -1,8 +1,9 @@
-import sys
 import pygame
 import random
 import math
 import os
+import cv2
+import numpy as np
 
 # ---------------- INIT ----------------
 pygame.init()
@@ -10,7 +11,6 @@ pygame.mixer.init()
 pygame.mixer.set_num_channels(32)
 
 WIDTH, HEIGHT = 1200, 700
-V_W, V_H = 320, 180
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Zombie Survival")
 
@@ -18,10 +18,6 @@ WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (220, 60, 60)
 BLACK = (0, 0, 0)
-HOVER_RED = (250, 80, 80)
-BLUE = (40, 90, 160)
-HOVER_BLUE = (60, 120, 210)
-DARK_BLUE = (20, 40, 90)
 
 clock = pygame.time.Clock()
 
@@ -109,18 +105,6 @@ try:
 except:
     boss_shot_sound = None
 
-# safe loader for optional music as Sound to avoid blocking loads on transition
-def _load_sound_opt(filename):
-    try:
-        return pygame.mixer.Sound(os.path.join(SND_PATH, filename))
-    except Exception:
-        return None
-
-# preload music clips (optional) to reduce latency when switching to gameplay
-menu_music_sound = _load_sound_opt("menu_music.mp3")
-game_music_sound = _load_sound_opt("game_music.mp3")
-mainmenu_music_sound = _load_sound_opt("mainMenu_sound.mp3")
-
 # ---------------- IMAGES ----------------
 menu_bg = pygame.transform.scale(
     pygame.image.load(os.path.join(IMG_PATH, "menu_bg.png")), (WIDTH, HEIGHT)
@@ -133,15 +117,32 @@ try:
 except:
     mainmenu_bg = menu_bg
 
-# Try jpg first, then png
+def scale_img_by_factor(img, factor):
+    if img:
+        w, h = img.get_size()
+        return pygame.transform.scale(img, (int(w * factor), int(h * factor)))
+    return None
+
 try:
-    bg_img = pygame.transform.scale(
-        pygame.image.load(os.path.join(IMG_PATH, "background.jpg")), (WIDTH, HEIGHT)
-    )
+    title_img = pygame.image.load(os.path.join(IMG_PATH, "ZOMBIE SURVIVAL.png")).convert_alpha()
+    title_img = scale_img_by_factor(title_img, 1.5)
 except:
-    bg_img = pygame.transform.scale(
-        pygame.image.load(os.path.join(IMG_PATH, "background.png")), (WIDTH, HEIGHT)
-    )
+    title_img = None
+
+try:
+    play_btn_img = pygame.image.load(os.path.join(IMG_PATH, "PLAY.png")).convert_alpha()
+    settings_btn_img = pygame.image.load(os.path.join(IMG_PATH, "SETTINGS.png")).convert_alpha()
+    quit_btn_img = pygame.image.load(os.path.join(IMG_PATH, "QUIT.png")).convert_alpha()
+    
+    play_btn_img = scale_img_by_factor(play_btn_img, 1.4)
+    settings_btn_img = scale_img_by_factor(settings_btn_img, 1.4)
+    quit_btn_img = scale_img_by_factor(quit_btn_img, 1.4)
+except:
+    play_btn_img = settings_btn_img = quit_btn_img = None
+
+bg_img = pygame.transform.scale(
+    pygame.image.load(os.path.join(IMG_PATH, "background.png")), (WIDTH, HEIGHT)
+)
 
 try:
     bg_img2 = pygame.transform.scale(
@@ -218,46 +219,15 @@ except:
     boss_img = pygame.Surface((150, 150), pygame.SRCALPHA)
     pygame.draw.rect(boss_img, (255, 0, 0), (0, 0, 150, 150))
 
-# -------- SPRITE SHEET HELPER FUNCTION --------
-def get_frame(sheet, frame, width, height):
-    row = frame // 4
-    col = frame % 4
-    rect = pygame.Rect(col * width, row * height, width, height)
-    frame_surface = pygame.Surface((width, height), pygame.SRCALPHA)
-    frame_surface.blit(sheet, (0, 0), rect)
-    return frame_surface
+characters = {
+    f"c{i}": pygame.transform.scale(
+        pygame.image.load(os.path.join(IMG_PATH, f"char{i}.png")), (80, 70)
+    )
+    for i in range(1, 8)
+}
 
-# -------- LOAD ALL CHARACTER SPRITE SHEETS --------
-def load_character_frames(char_num):
-    try:
-        sheet = pygame.image.load(os.path.join(IMG_PATH, f"char{char_num}.png")).convert_alpha()
-        sheet_width, sheet_height = sheet.get_size()
-        frame_width = sheet_width // 4
-        frame_height = sheet_height // 2
-        frames = [pygame.transform.scale(get_frame(sheet, i, frame_width, frame_height), (80, 100)) for i in range(8)]
-        return frames
-    except:
-        return None
-
-# Load frames for all characters (1-7)
-all_char_frames = {}
-for i in range(1, 8):
-    all_char_frames[f"c{i}"] = load_character_frames(i)
-
-# -------- LOAD OTHER CHARACTERS (FALLBACK STATIC) --------
-characters = {}
-for i in range(1, 8):
-    try:
-        characters[f"c{i}"] = pygame.transform.scale(
-            pygame.image.load(os.path.join(IMG_PATH, f"char{i}.png")), (80, 100)
-        )
-    except:
-        surface = pygame.Surface((80, 100), pygame.SRCALPHA)
-        pygame.draw.rect(surface, (100, 100, 100), (0, 0, 80, 100))
-        characters[f"c{i}"] = surface
-
-# -------- SETTINGS ----------------
-player_size = 80
+# ---------------- SETTINGS ----------------
+player_size = 65
 base_speed = 6
 zombie_speed = 2.6
 global_volume = 1.0
@@ -272,66 +242,62 @@ def update_volume():
     if gameover_sound: gameover_sound.set_volume(global_volume)
     if boss_shot_sound: boss_shot_sound.set_volume(global_volume)
 
-def settings_menu(pause_background=None):
+def settings_menu():
     global global_volume
-    if pause_background is None:
-        pause_background = screen.copy()
-    overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
-    overlay.fill((0, 0, 0, 180))
-
     in_settings = True
     while in_settings:
-        screen.blit(pause_background, (0, 0))
+        screen.blit(menu_bg, (0, 0))
+        overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
+        overlay.fill((0, 0, 0, 200))
         screen.blit(overlay, (0, 0))
-        mpos = pygame.mouse.get_pos()
 
-        draw_text_center(f"VOLUME: {int(global_volume * 100)}%", small_font, WHITE, (WIDTH//2, 150))
-        minus_rect = pygame.Rect(WIDTH//2 - 200, 120, 60, 60)
-        plus_rect = pygame.Rect(WIDTH//2 + 140, 120, 60, 60)
+        draw_text_center("SETTINGS AND CONTROLS", ui_font, WHITE, (WIDTH//2, 100))
+        
+        # Volume
+        draw_text_center(f"VOLUME: {int(global_volume * 100)}%", small_font, WHITE, (WIDTH//2, 220))
+        
+        minus_rect = pygame.Rect(WIDTH//2 - 200, 190, 60, 60)
+        plus_rect = pygame.Rect(WIDTH//2 + 140, 190, 60, 60)
+        
+        mpos = pygame.mouse.get_pos()
         pygame.draw.rect(screen, (100, 100, 100) if minus_rect.collidepoint(mpos) else (80, 80, 80), minus_rect, border_radius=10)
         pygame.draw.rect(screen, (100, 100, 100) if plus_rect.collidepoint(mpos) else (80, 80, 80), plus_rect, border_radius=10)
-        draw_text_center("-", ui_font, WHITE, (WIDTH//2 - 170, 150))
-        draw_text_center("+", ui_font, WHITE, (WIDTH//2 + 170, 150))
-
-        controls_rect = pygame.Rect(WIDTH//2 - 400, 240, 800, 200)
+        
+        draw_text_center("-", ui_font, WHITE, (WIDTH//2 - 170, 220))
+        draw_text_center("+", ui_font, WHITE, (WIDTH//2 + 170, 220))
+        
+        # Controls
+        controls_rect = pygame.Rect(WIDTH//2 - 400, 290, 800, 240)
         pygame.draw.rect(screen, (30, 30, 30), controls_rect, border_radius=15)
         pygame.draw.rect(screen, (150, 150, 150), controls_rect, 2, border_radius=15)
-        draw_text_center("CONTROLS", small_font, GREEN, (WIDTH//2, 270))
-        draw_text_center("WASD or Arrows - Move character around the map.", mini_font, WHITE, (WIDTH//2, 320))
-        draw_text_center("Auto Attack - Automatically fires gun bullets at zombies/boss.", mini_font, WHITE, (WIDTH//2, 360))
-        draw_text_center("Goal: Survive waves and defeat Bosses!", mini_font, (200, 200, 200), (WIDTH//2, 400))
-
-        resume_rect = pygame.Rect(WIDTH//2 - 150, 480, 300, 60)
-        quit_rect = pygame.Rect(WIDTH//2 - 150, 560, 300, 60)
-        r_color = BLUE if resume_rect.collidepoint(mpos) else (30, 60, 120)
-        pygame.draw.rect(screen, r_color, resume_rect, border_radius=10)
-        draw_text_center("RESUME", small_font, WHITE, resume_rect.center)
-        q_color = RED if quit_rect.collidepoint(mpos) else (120, 30, 30)
-        pygame.draw.rect(screen, q_color, quit_rect, border_radius=10)
-        draw_text_center("QUIT TO MENU", small_font, WHITE, quit_rect.center)
+        
+        draw_text_center("CONTROLS", small_font, GREEN, (WIDTH//2, 320))
+        draw_text_center("WASD or Arrows - Move character around the map.", mini_font, WHITE, (WIDTH//2, 360))
+        draw_text_center("Auto Attack - Automatically fires gun bullets at zombies/boss.", mini_font, WHITE, (WIDTH//2, 395))
+        draw_text_center("ESC - Pause the Game.", mini_font, WHITE, (WIDTH//2, 430))
+        draw_text_center("Objective: Survive waves, grab items, enter portals, and defeat Boss!", mini_font, (200, 200, 200), (WIDTH//2, 465))
+        
+        # Back
+        back_rect = pygame.Rect(WIDTH//2 - 100, 550, 200, 60)
+        
+        b_color = (150, 50, 50) if back_rect.collidepoint(mpos) else (100, 40, 40)
+        pygame.draw.rect(screen, b_color, back_rect, border_radius=10)
+        draw_text_center("BACK", ui_font, WHITE, (WIDTH//2, 580))
 
         pygame.display.update()
 
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                pygame.quit(); exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if resume_rect.collidepoint(event.pos):
+                if back_rect.collidepoint(event.pos):
                     in_settings = False
-                elif quit_rect.collidepoint(event.pos):
-                    return "quit_to_menu"
                 elif minus_rect.collidepoint(event.pos):
                     global_volume = max(0.0, global_volume - 0.1)
                     update_volume()
                 elif plus_rect.collidepoint(event.pos):
                     global_volume = min(1.0, global_volume + 0.1)
                     update_volume()
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
-                    in_settings = False
-        clock.tick(60)
-    return "resume"
 
 def pause_menu():
     pygame.mixer.music.pause()
@@ -342,18 +308,25 @@ def pause_menu():
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 200))
         screen.blit(overlay, (0, 0))
+        
         draw_text_center("PAUSED", title_font, RED, (WIDTH//2, 180))
+        
         resume_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
         settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
         quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        
         mpos = pygame.mouse.get_pos()
+        
         pygame.draw.rect(screen, (50, 150, 50) if resume_rect.collidepoint(mpos) else (30, 100, 30), resume_rect, border_radius=15)
         pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
         pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
+        
         draw_text_center("RESUME", ui_font, WHITE, (WIDTH//2, 340))
         draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
         draw_text_center("QUIT TO MENU", small_font, WHITE, (WIDTH//2, 580))
+        
         pygame.display.update()
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit(); exit()
@@ -366,156 +339,196 @@ def pause_menu():
                     pygame.mixer.music.unpause()
                     return "resume"
                 elif settings_rect.collidepoint(event.pos):
-                    result = settings_menu(bg_surface)
-                    if result == "quit_to_menu":
-                        return "quit"
+                    settings_menu()
                 elif quit_rect.collidepoint(event.pos):
                     return "quit"
 
 def main_menu():
     update_volume()
-    # prefer preloaded music Sound objects to reduce latency
     try:
-        pygame.mixer.music.stop()
-    except Exception:
-        pass
-    if mainmenu_music_sound:
-        try:
-            mainmenu_music_sound.play(-1)
-        except Exception:
-            try:
-                pygame.mixer.music.load(main_menu_music)
-                pygame.mixer.music.play(-1)
-            except Exception:
-                try:
-                    pygame.mixer.music.load(menu_music)
-                    pygame.mixer.music.play(-1)
-                except Exception:
-                    pass
-    elif menu_music_sound:
-        try:
-            menu_music_sound.play(-1)
-        except Exception:
-            try:
-                pygame.mixer.music.load(menu_music)
-                pygame.mixer.music.play(-1)
-            except Exception:
-                pass
-    else:
-        try:
-            pygame.mixer.music.load(main_menu_music)
-        except:
-            try:
-                pygame.mixer.music.load(menu_music)
-            except Exception:
-                pass
-        try:
-            pygame.mixer.music.play(-1)
-        except Exception:
-            pass
+        pygame.mixer.music.load(main_menu_music)
+    except:
+        pygame.mixer.music.load(menu_music)
+    pygame.mixer.music.play(-1)
+    
+    # Initialize video capture
+    video_path = os.path.join(IMG_PATH, "MainMenu bg.mp4")
+    try:
+        cap = cv2.VideoCapture(video_path)
+        fps = cap.get(cv2.CAP_PROP_FPS)
+        if fps == 0: fps = 30
+    except:
+        cap = None
+        fps = 30
+
+    menu_clock = pygame.time.Clock()
+    
     while True:
-        screen.blit(mainmenu_bg, (0, 0))
-        draw_text_center("ZOMBIE SURVIVAL", title_font, RED, (WIDTH//2, 180))
-        play_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
-        settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
-        quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        # Video background
+        if cap and cap.isOpened():
+            success, frame = cap.read()
+            if not success:
+                cap.set(cv2.CAP_PROP_POS_FRAMES, 0)
+                success, frame = cap.read()
+            if success:
+                frame = cv2.resize(frame, (WIDTH, HEIGHT))
+                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                frame = np.transpose(frame, (1, 0, 2))
+                surface = pygame.surfarray.make_surface(frame)
+                screen.blit(surface, (0, 0))
+            else:
+                screen.blit(mainmenu_bg, (0, 0))
+        else:
+            screen.blit(mainmenu_bg, (0, 0))
+        
+        # Title
+        if title_img:
+            t_w, t_h = title_img.get_size()
+            screen.blit(title_img, (WIDTH//2 - t_w//2, 80))
+        else:
+            draw_text_center("ZOMBIE SURVIVAL", title_font, RED, (WIDTH//2, 180))
+        
         mpos = pygame.mouse.get_pos()
-        pygame.draw.rect(screen, (50, 150, 50) if play_rect.collidepoint(mpos) else (30, 100, 30), play_rect, border_radius=15)
-        pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
-        pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
-        draw_text_center("PLAY", ui_font, WHITE, (WIDTH//2, 340))
-        draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
-        draw_text_center("QUIT", ui_font, WHITE, (WIDTH//2, 580))
+        
+        # Play Button
+        play_rect = pygame.Rect(WIDTH//2 - 150, 300, 300, 80)
+        if play_btn_img:
+            btn_w, btn_h = play_btn_img.get_size()
+            play_rect = pygame.Rect(WIDTH//2 - btn_w//2, 300, btn_w, btn_h)
+            if play_rect.collidepoint(mpos):
+                hover_img = pygame.transform.scale(play_btn_img, (int(btn_w*1.05), int(btn_h*1.05)))
+                screen.blit(hover_img, (WIDTH//2 - int(btn_w*1.05)//2, 300 - int(btn_h*0.025)))
+            else:
+                screen.blit(play_btn_img, (play_rect.x, play_rect.y))
+        else:
+            pygame.draw.rect(screen, (50, 150, 50) if play_rect.collidepoint(mpos) else (30, 100, 30), play_rect, border_radius=15)
+            draw_text_center("PLAY", ui_font, WHITE, (WIDTH//2, 340))
+            
+        # Settings Button
+        settings_rect = pygame.Rect(WIDTH//2 - 150, 420, 300, 80)
+        if settings_btn_img:
+            btn_w, btn_h = settings_btn_img.get_size()
+            settings_rect = pygame.Rect(WIDTH//2 - btn_w//2, 420, btn_w, btn_h)
+            if settings_rect.collidepoint(mpos):
+                hover_img = pygame.transform.scale(settings_btn_img, (int(btn_w*1.05), int(btn_h*1.05)))
+                screen.blit(hover_img, (WIDTH//2 - int(btn_w*1.05)//2, 420 - int(btn_h*0.025)))
+            else:
+                screen.blit(settings_btn_img, (settings_rect.x, settings_rect.y))
+        else:
+            pygame.draw.rect(screen, (50, 50, 150) if settings_rect.collidepoint(mpos) else (30, 30, 100), settings_rect, border_radius=15)
+            draw_text_center("SETTINGS", ui_font, WHITE, (WIDTH//2, 460))
+            
+        # Quit Button
+        quit_rect = pygame.Rect(WIDTH//2 - 150, 540, 300, 80)
+        if quit_btn_img:
+            btn_w, btn_h = quit_btn_img.get_size()
+            quit_rect = pygame.Rect(WIDTH//2 - btn_w//2, 540, btn_w, btn_h)
+            if quit_rect.collidepoint(mpos):
+                hover_img = pygame.transform.scale(quit_btn_img, (int(btn_w*1.05), int(btn_h*1.05)))
+                screen.blit(hover_img, (WIDTH//2 - int(btn_w*1.05)//2, 540 - int(btn_h*0.025)))
+            else:
+                screen.blit(quit_btn_img, (quit_rect.x, quit_rect.y))
+        else:
+            pygame.draw.rect(screen, (150, 50, 50) if quit_rect.collidepoint(mpos) else (100, 30, 30), quit_rect, border_radius=15)
+            draw_text_center("QUIT", ui_font, WHITE, (WIDTH//2, 580))
+        
         pygame.display.update()
+        menu_clock.tick(fps)
+        
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
+                if cap: cap.release()
                 pygame.quit(); exit()
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if play_rect.collidepoint(event.pos):
+                    if cap: cap.release()
                     return "play"
                 elif settings_rect.collidepoint(event.pos):
+                    if cap: cap.release()
                     settings_menu()
+                    try:
+                        cap = cv2.VideoCapture(video_path)
+                    except:
+                        cap = None
                 elif quit_rect.collidepoint(event.pos):
+                    if cap: cap.release()
                     pygame.quit(); exit()
 
 # ---------------- CHARACTER SELECT ----------------
 def character_select():
     selected = None
-    selected_char_id = None
     keys = list(characters.keys())
     char_names = ["Brix", "Paul", "Ashley", "Hendrix", "Benedict", "Ethan", "Alvin"]
-    # Load avatar images avatar1..avatar7.png from assets/images
-    avatars = []
-    for i in range(1, 8):
-        path = os.path.join(IMG_PATH, f"avatar{i}.png")
-        try:
-            img = pygame.image.load(path).convert_alpha()
-            img = pygame.transform.scale(img, (90, 100))
-        except:
-            # fallback to existing character image if avatar missing
-            img = characters.get(f"c{i}")
-            if img is None:
-                img = pygame.Surface((90, 100), pygame.SRCALPHA)
-                pygame.draw.rect(img, (120, 120, 120), (0, 0, 90, 100))
-        avatars.append(img)
 
     pygame.mixer.music.load(menu_music)
     pygame.mixer.music.play(-1)
+
     while selected is None:
         screen.blit(menu_bg, (0, 0))
+        
+        # Add a subtle dark overlay for better contrast
         overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
         overlay.fill((0, 0, 0, 150))
         screen.blit(overlay, (0, 0))
+
         draw_text_center("CHOOSE YOUR CHARACTER", ui_font, RED, (WIDTH//2, 120))
         draw_text_center("Click or Press 1 - 7 to Select", small_font, (200, 200, 200), (WIDTH//2, 620))
+
         spacing = 140
         start_x = WIDTH//2 - (len(keys) * spacing) // 2 + (spacing // 2)
         mpos = pygame.mouse.get_pos()
+        
         char_rects = []
+
         for i, key in enumerate(keys):
             cx = start_x + i * spacing
             cy = HEIGHT // 2 + 30
+            
+            # Character card rect
             card_rect = pygame.Rect(0, 0, 120, 180)
             card_rect.center = (cx, cy)
             char_rects.append((card_rect, key))
+            
             is_hovered = card_rect.collidepoint(mpos)
+            
+            # Draw card background
             bg_color = (80, 80, 80) if is_hovered else (40, 40, 40)
             pygame.draw.rect(screen, bg_color, card_rect, border_radius=15)
+            
+            # Draw border
             border_color = GREEN if is_hovered else (150, 150, 150)
             border_width = 4 if is_hovered else 2
             pygame.draw.rect(screen, border_color, card_rect, border_width, border_radius=15)
-
-            # draw a triangular decorative background behind the avatar (triangle look)
-            tri_color = (30, 30, 30)
-            tri_points = [(cx-40, cy+40), (cx+40, cy+40), (cx, cy-30)]
-            pygame.draw.polygon(screen, tri_color, tri_points)
-
-            avatar_img = avatars[i]
+            
+            # Draw character sprite
+            char_img = characters[key]
             if is_hovered:
-                avatar_draw = pygame.transform.scale(avatar_img, (100, 110))
-            else:
-                avatar_draw = avatar_img
-            img_rect = avatar_draw.get_rect(center=(cx, cy - 15))
-            screen.blit(avatar_draw, img_rect)
+                # Slight scale up on hover
+                char_img = pygame.transform.scale(char_img, (90, 80))
+            
+            img_rect = char_img.get_rect(center=(cx, cy - 25))
+            screen.blit(char_img, img_rect)
+            
+            # Draw character name and number
             name_color = WHITE if is_hovered else (180, 180, 180)
-            draw_text_center(char_names[i], mini_font, name_color, (cx, cy + 50))
-            draw_text_center(f"[{i+1}]", mini_font, (200, 200, 100), (cx, cy + 75))
+            draw_text_center(char_names[i], mini_font, name_color, (cx, cy + 40))
+            draw_text_center(f"[{i+1}]", mini_font, (200, 200, 100), (cx, cy + 65))
+
         pygame.display.update()
+
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit(); exit()
             if event.type == pygame.KEYDOWN:
                 if pygame.K_1 <= event.key <= pygame.K_7:
-                    char_num = event.key - pygame.K_0
-                    selected_char_id = char_num
-                    selected = avatars[char_num-1]
+                    selected = characters[f"c{event.key - pygame.K_0}"]
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if event.button == 1:
-                    for idx, (rect, key) in enumerate(char_rects):
+                if event.button == 1: # Left click
+                    for rect, key in char_rects:
                         if rect.collidepoint(event.pos):
-                            selected = avatars[idx]
-                            selected_char_id = int(key[1:])
-    return selected, selected_char_id
+                            selected = characters[key]
+
+    return selected
 
 # ---------------- RESET ----------------
 def reset_game():
@@ -549,10 +562,8 @@ def reset_game():
         "start_time": pygame.time.get_ticks(),
         "game_over": False,
         "win": False,
-        "animation_frame": 0,
-        "animation_timer": 0,
-        "is_moving": False,
-        "facing_right": True
+        "player_facing": "right",
+        "endless_start_ms": 0
     }
 
 def spawn_zombie():
@@ -573,47 +584,17 @@ def spawn_item():
 running = True
 
 while running:
+    pygame.mixer.stop()
     action = main_menu()
     if action == "quit":
         break
 
-    player_img, selected_char_id = character_select()
+    player_img = character_select()
     high_score = load_highscore()
 
-    # stop menu music and start game music; prefer preloaded Sound to avoid blocking
-    try:
-        pygame.mixer.music.stop()
-    except Exception:
-        pass
-    # stop any preloaded menu music sounds
-    try:
-        if mainmenu_music_sound:
-            mainmenu_music_sound.stop()
-    except Exception:
-        pass
-    try:
-        if menu_music_sound:
-            menu_music_sound.stop()
-    except Exception:
-        pass
-
-    if game_music_sound:
-        # play preloaded game music as looping Sound
-        try:
-            game_music_sound.play(-1)
-        except Exception:
-            # fallback to streaming via mixer.music
-            try:
-                pygame.mixer.music.load(game_music)
-                pygame.mixer.music.play(-1)
-            except Exception:
-                pass
-    else:
-        try:
-            pygame.mixer.music.load(game_music)
-            pygame.mixer.music.play(-1)
-        except Exception:
-            pass
+    pygame.mixer.music.stop()
+    pygame.mixer.music.load(game_music)
+    pygame.mixer.music.play(-1)
 
     state = reset_game()
     final_time = 0
@@ -634,13 +615,14 @@ while running:
                 game_running = False
             if event.type == pygame.KEYDOWN and event.key == pygame.K_r:
                 game_running = False
-            if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_ESCAPE:
+            if event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                if not state.get("game_over") and not state.get("endgame_choice"):
                     pause_start = pygame.time.get_ticks()
                     action = pause_menu()
                     if action == "quit":
                         game_running = False
                         break
+                    
                     pause_duration = pygame.time.get_ticks() - pause_start
                     state["speed_boost_end"] += pause_duration
                     state["shield_end"] += pause_duration
@@ -657,7 +639,7 @@ while running:
         state["last_ticks"] = current_ticks
 
         if not state["game_over"] and not state["endgame_choice"]:
-            if not state["portal_active"] and not state["boss_active"]:
+            if not state["portal_active"]:
                 state["elapsed_ms"] += dt
             final_time = state["elapsed_ms"] // 1000
 
@@ -668,30 +650,36 @@ while running:
             overlay = pygame.Surface((WIDTH, HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 180))
             screen.blit(overlay, (0, 0))
+
             dialog_rect = pygame.Rect(WIDTH//2 - 400, HEIGHT//2 - 200, 800, 400)
             pygame.draw.rect(screen, (30, 30, 30), dialog_rect, border_radius=15)
             pygame.draw.rect(screen, (200, 200, 200), dialog_rect, 3, border_radius=15)
+
             draw_text_center("BOSS DEFEATED!", ui_font, GREEN, (WIDTH//2, HEIGHT//2 - 120))
             draw_text_center("The infection halts... for now.", small_font, (180, 180, 180), (WIDTH//2, HEIGHT//2 - 60))
+            
             btn1_rect = pygame.Rect(WIDTH//2 - 350, HEIGHT//2 + 30, 300, 120)
             pygame.draw.rect(screen, (40, 100, 40), btn1_rect, border_radius=10)
             pygame.draw.rect(screen, (100, 255, 100), btn1_rect, 2, border_radius=10)
-            draw_text_center("Press W", ui_font, WHITE, (WIDTH//2 - 200, HEIGHT//2 + 70))
+            draw_text_center("Press 1", ui_font, WHITE, (WIDTH//2 - 200, HEIGHT//2 + 70))
             draw_text_center("VICTORY (MENU)", small_font, (200, 255, 200), (WIDTH//2 - 200, HEIGHT//2 + 120))
+
             btn2_rect = pygame.Rect(WIDTH//2 + 50, HEIGHT//2 + 30, 300, 120)
             pygame.draw.rect(screen, (100, 40, 40), btn2_rect, border_radius=10)
             pygame.draw.rect(screen, (255, 100, 100), btn2_rect, 2, border_radius=10)
-            draw_text_center("Press E", ui_font, WHITE, (WIDTH//2 + 200, HEIGHT//2 + 70))
+            draw_text_center("Press 2", ui_font, WHITE, (WIDTH//2 + 200, HEIGHT//2 + 70))
             draw_text_center("ENTER ENDLESS", small_font, (255, 200, 200), (WIDTH//2 + 200, HEIGHT//2 + 120))
+
             keys = pygame.key.get_pressed()
-            if keys[pygame.K_w]:
+            if keys[pygame.K_1]:
                 state["game_over"] = True
                 state["win"] = True
                 state["endgame_choice"] = False
-            elif keys[pygame.K_e]:
+            elif keys[pygame.K_2]:
                 state["stage"] = "endless"
                 state["zombies"] = []
                 state["endgame_choice"] = False
+                state["endless_start_ms"] = state["elapsed_ms"]
 
         elif not state["game_over"]:
 
@@ -700,14 +688,12 @@ while running:
                 speed += 4
 
             keys = pygame.key.get_pressed()
-            movement_keys = [pygame.K_a, pygame.K_d, pygame.K_w, pygame.K_s, pygame.K_LEFT, pygame.K_RIGHT, pygame.K_UP, pygame.K_DOWN]
-            state["is_moving"] = any(keys[k] for k in movement_keys)
             if keys[pygame.K_a] or keys[pygame.K_LEFT]:
                 state["player_x"] -= speed
-                state["facing_right"] = False
+                state["player_facing"] = "left"
             if keys[pygame.K_d] or keys[pygame.K_RIGHT]:
                 state["player_x"] += speed
-                state["facing_right"] = True
+                state["player_facing"] = "right"
             if keys[pygame.K_w] or keys[pygame.K_UP]:
                 state["player_y"] -= speed
             if keys[pygame.K_s] or keys[pygame.K_DOWN]:
@@ -749,9 +735,12 @@ while running:
                 if state["stage"] == 2: spawn_chance = 25
                 if state["stage"] == 3: spawn_chance = 35
                 if state["stage"] == "endless":
-                    spawn_chance = max(2, 20 - ((state["elapsed_ms"] - 160000) // 5000))
+                    time_in_endless = state["elapsed_ms"] - state["endless_start_ms"]
+                    spawn_chance = max(10, 35 - (time_in_endless // 10000))
+                
                 if random.randint(1, spawn_chance) == 1:
                     state["zombies"].append(spawn_zombie())
+
                 if random.randint(1, 350) == 1:
                     state["items"].append(spawn_item())
 
@@ -759,31 +748,39 @@ while running:
 
             zmb_spd = zombie_speed
             if state["stage"] == "endless":
-                zmb_spd += min(5.0, (state["elapsed_ms"] - 160000) / 15000.0)
+                time_in_endless = state["elapsed_ms"] - state["endless_start_ms"]
+                zmb_spd += min(2.0, time_in_endless / 25000.0)
 
             for zombie in state["zombies"]:
                 dx = state["player_x"] - zombie[0]
                 dy = state["player_y"] - zombie[1]
+
                 zombie[0] += dx * 0.01 * zmb_spd
                 zombie[1] += dy * 0.01 * zmb_spd
+
                 if dx < 0:
                     img = pygame.transform.flip(zombie_img, True, False)
                 else:
                     img = zombie_img
+
                 if player_rect.colliderect(pygame.Rect(zombie[0], zombie[1],55,55)):
                     if current_ticks > state["shield_end"]:
                         state["health"] -= 0.3
                         hit_sound.play()
+
                 screen.blit(img, zombie)
 
             for item in state["items"][:]:
                 item_size = 80 if item["type"] == "ejeep" else 35
                 img_w, img_h = (80, 80) if item["type"] == "ejeep" else (45, 45)
                 rect = pygame.Rect(item["pos"][0], item["pos"][1], item_size, item_size)
+
+                # Draw pulsing highlight circle behind item
                 cx = item["pos"][0] + img_w // 2
                 cy = item["pos"][1] + img_h // 2
                 pulse = abs(math.sin(current_ticks * 0.005)) * 5
                 pygame.draw.circle(screen, (255, 255, 100), (cx, cy), int(img_w // 1.6 + pulse), 3)
+
                 if item["type"] == "heal":
                     screen.blit(heal_img, item["pos"])
                 elif item["type"] == "speed":
@@ -794,6 +791,7 @@ while running:
                     screen.blit(shield_img, item["pos"])
                 elif item["type"] == "ejeep":
                     screen.blit(ejeep_item_img, item["pos"])
+
                 if player_rect.colliderect(rect):
                     if item["type"] == "heal":
                         state["health"] = min(100, state["health"] + 25)
@@ -814,13 +812,16 @@ while running:
                             ejeep_sound.play()
                         else:
                             speed_sound.play()
+
                     state["items"].remove(item)
 
+            # EJEEP Animation
             if state["ejeep_anim_active"]:
                 state["ejeep_anim_x"] += 20
                 screen.blit(ejeep_wipe_img, (state["ejeep_anim_x"], 0))
                 wipe_rect = pygame.Rect(state["ejeep_anim_x"], 0, 800, HEIGHT)
                 state["zombies"] = [z for z in state["zombies"] if not wipe_rect.colliderect(pygame.Rect(z[0], z[1], 55, 55))]
+                
                 if state["ejeep_anim_x"] > WIDTH:
                     state["ejeep_anim_active"] = False
                     if state["stage"] == 1:
@@ -830,6 +831,7 @@ while running:
                         state["portal_active"] = True
                         state["portal_pos"] = [WIDTH//2 - 100, HEIGHT//2 - 100]
 
+            # Portal logic
             if state["portal_active"]:
                 screen.blit(portal_img, state["portal_pos"])
                 if player_rect.colliderect(pygame.Rect(state["portal_pos"][0], state["portal_pos"][1], 200, 200)):
@@ -841,10 +843,12 @@ while running:
                         state["boss_active"] = True
                         state["boss_health"] = 2000
 
+            # Boss Logic
             if state["boss_active"]:
                 if current_ticks - state["last_boss_gun_spawn"] > 10000:
                     state["items"].append({"type": "gun", "pos": [random.randint(50, WIDTH-50), random.randint(50, HEIGHT-50)]})
                     state["last_boss_gun_spawn"] = current_ticks
+
                 bx, by = state["boss_pos"]
                 dx = state["player_x"] - bx
                 dy = state["player_y"] - by
@@ -853,12 +857,15 @@ while running:
                     bx += (dx / dist) * 3.2
                     by += (dy / dist) * 3.2
                 state["boss_pos"] = [bx, by]
+                
                 boss_rect = pygame.Rect(bx, by, 150, 150)
                 screen.blit(boss_img, (bx, by))
+                
                 if player_rect.colliderect(boss_rect):
                     if current_ticks > state["shield_end"]:
                         state["health"] -= 0.6
                         hit_sound.play()
+                
                 if current_ticks < state["gun_end"]:
                     if current_ticks - state["last_shot"] > 200:
                         state["lasers"].append({"start": (state["player_x"]+player_size//2, state["player_y"]+player_size//2), "end": (bx+75, by+75), "time": current_ticks})
@@ -871,8 +878,10 @@ while running:
                     if state.get("boss_gun_playing"):
                         if boss_shot_sound: boss_shot_sound.stop()
                         state["boss_gun_playing"] = False
+
                 pygame.draw.rect(screen, RED, (WIDTH//2 - 200, 20, 400, 20))
-                pygame.draw.rect(screen, GREEN, (WIDTH//2 - 200, 20, max(0, state["boss_health"]) * 0.4, 20))
+                pygame.draw.rect(screen, GREEN, (WIDTH//2 - 200, 20, max(0, state["boss_health"])*0.4, 20))
+                
                 if state["boss_health"] <= 0:
                     state["boss_active"] = False
                     state["endgame_choice"] = True
@@ -881,6 +890,7 @@ while running:
                         if boss_shot_sound: boss_shot_sound.stop()
                         state["boss_gun_playing"] = False
 
+            # Auto aim gun logic
             if current_ticks < state["gun_end"]:
                 if len(state["zombies"]) > 0 and current_ticks - state["last_shot"] > 500:
                     px, py = state["player_x"] + player_size//2, state["player_y"] + player_size//2
@@ -888,48 +898,27 @@ while running:
                     state["lasers"].append({"start": (px, py), "end": (closest_zombie[0] + 30, closest_zombie[1] + 30), "time": current_ticks})
                     state["zombies"].remove(closest_zombie)
                     state["last_shot"] = current_ticks
-                    if shot_sound:
+                    if shot_sound: 
                         shot_sound.stop()
                         shot_sound.play()
             else:
                 if shot_sound: shot_sound.stop()
 
+            # Draw lasers
             for laser in state["lasers"][:]:
                 if current_ticks - laser["time"] < 150:
                     pygame.draw.line(screen, (255, 255, 0), laser["start"], laser["end"], 3)
                 else:
                     state["lasers"].remove(laser)
 
-            if state["is_moving"]:
-                state["animation_timer"] += 1
-                if state["animation_timer"] >= 8:
-                    state["animation_timer"] = 0
-                    state["animation_frame"] = (state["animation_frame"] + 1) % 8
+            if state.get("player_facing") == "left":
+                p_img = pygame.transform.flip(player_img, True, False)
             else:
-                state["animation_frame"] = 0
-                state["animation_timer"] = 0
-
-            char_key = f"c{selected_char_id}"
-            if all_char_frames[char_key] is not None:
-                current_player_img = all_char_frames[char_key][state["animation_frame"]]
-            else:
-                current_player_img = player_img
-            if not state["facing_right"]:
-                current_player_img = pygame.transform.flip(current_player_img, True, False)
-            screen.blit(current_player_img, (state["player_x"], state["player_y"]))
-
+                p_img = player_img
+            screen.blit(p_img, (state["player_x"], state["player_y"]))
+            
             if pygame.time.get_ticks() < state["shield_end"]:
-                # align shield circle to current player's sprite center and size
-                try:
-                    pw = current_player_img.get_width()
-                    ph = current_player_img.get_height()
-                    cx = int(state["player_x"] + pw / 2)
-                    cy = int(state["player_y"] + ph / 2)
-                    radius = int(max(pw, ph) * 0.6)
-                    pygame.draw.circle(screen, (100, 200, 255), (cx, cy), radius, 4)
-                except Exception:
-                    # fallback to previous hardcoded values if something unexpected occurs
-                    pygame.draw.circle(screen, (100, 200, 255), (int(state["player_x"] + 40), int(state["player_y"] + 35)), 50, 4)
+                pygame.draw.circle(screen, (100, 200, 255), (int(state["player_x"] + 40), int(state["player_y"] + 35)), 50, 4)
 
             pygame.draw.rect(screen, WHITE, (10,10,220,25))
             pygame.draw.rect(screen, GREEN, (10,10,state["health"]*2.2,25))
@@ -947,9 +936,11 @@ while running:
             else:
                 draw_text_center("GAME OVER", title_font, RED, (WIDTH//2, HEIGHT//2 - 140))
             draw_text_center(f"You survived: {final_time}s", ui_font, WHITE, (WIDTH//2, HEIGHT//2))
+
             if final_time > high_score:
                 high_score = final_time
                 save_highscore(high_score)
+
             draw_text_center("Press R to Return to Menu", small_font, WHITE, (WIDTH//2, HEIGHT//2 + 90))
 
         pygame.display.update()
