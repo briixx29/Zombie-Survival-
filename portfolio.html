@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zombie Survival - Official Portfolio</title>
+    <meta name="description"
+        content="Official portfolio and download page for Zombie Survival, an action-packed 2D top-down shooter game built in Pygame.">
+    <link rel="stylesheet" href="style.css">
+    <link
+        href="https://fonts.googleapis.com/css2?family=Creepster&family=Inter:wght@300;400;600;800&family=Outfit:wght@400;700;900&display=swap"
+        rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <!-- Navbar -->
+    <nav class="navbar">
+        <div class="logo">
+            <i class="fas fa-biohazard"></i> ZS
+        </div>
+        <ul class="nav-links">
+            <li><a href="#about">About</a></li>
+            <li><a href="#how-to-play">How to Play</a></li>
+            <li><a href="#team">The Team</a></li>
+        </ul>
+        <a href="#download" class="btn download-btn-nav">Download</a>
+        <div class="hamburger">
+            <i class="fas fa-bars"></i>
+        </div>
+    </nav>
+
+    <!-- Mobile Menu Overlay -->
+    <div class="mobile-menu">
+        <ul class="mobile-nav-links">
+            <li><a href="#about">About</a></li>
+            <li><a href="#how-to-play">How to Play</a></li>
+            <li><a href="#team">The Team</a></li>
+            <li><a href="#download" class="btn primary-btn">Download</a></li>
+        </ul>
+    </div>
+
+    <!-- Hero Section -->
+    <header class="hero" id="hero">
+        <div class="particles" id="particles"></div>
+        <div class="hero-content">
+            <div class="badge">Version 1.0 Available Now</div>
+            <h1 class="glitch" data-text="ZOMBIE SURVIVAL">ZOMBIE SURVIVAL</h1>
+            <p class="subtitle">Survive the apocalypse in this heart-pounding 2D top-down shooter.</p>
+            <div class="hero-buttons">
+                <a href="#download" class="btn primary-btn pulse-btn">Get the Game <i class="fas fa-download"></i></a>
+                <a href="#about" class="btn secondary-btn">Discover More <i class="fas fa-arrow-down"></i></a>
+            </div>
+        </div>
+        <div class="scroll-indicator">
+            <p>Scroll down</p>
+            <i class="fas fa-chevron-down"></i>
+        </div>
+    </header>
+
+    <!-- About Section -->
+    <section class="about section-padding hidden" id="about">
+        <div class="container">
+            <div class="section-title">
+                <h2>About The Game</h2>
+                <div class="underline"></div>
+            </div>
+            <div class="about-content">
+                <div class="about-text">
+                    <p><strong>Zombie Survival</strong> is an intense, action-packed 2D top-down shooter built with
+                        Pygame where your only goal is to stay alive. Set in a post-apocalyptic world overrun by the
+                        undead, you must navigate through treacherous environments, fend off endless waves of zombies,
+                        and test your reflexes.</p>
+                    <p>Featuring an immersive visual style, dynamic combat mechanics, and a variety of power-ups and
+                        weapons, the game is designed to keep you on the edge of your seat. Do you have what it takes to
+                        survive?</p>
+                </div>
+                <div class="about-features">
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-skull"></i></div>
+                        <h3>Endless Hordes</h3>
+                        <p>Survive against ever-growing waves of relentless zombies. The longer you last, the harder it gets.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-crosshairs"></i></div>
+                        <h3>Intense Combat</h3>
+                        <p>Master your aim and movement to dodge and destroy enemies in fluid top-down combat.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-shield-alt"></i></div>
+                        <h3>Power-ups</h3>
+                        <p>Collect guns, shields, speed boosts, and the special E-Jeep to turn the tide of battle.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-map"></i></div>
+                        <h3>Dynamic Stages</h3>
+                        <p>Progress through 3 unique environments, use portals to advance, and defeat a challenging final Boss.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-users"></i></div>
+                        <h3>Character Select</h3>
+                        <p>Choose from 7 different playable characters with their own unique avatars before dropping in.</p>
+                    </div>
+                    <div class="feature-card">
+                        <div class="feature-icon"><i class="fas fa-trophy"></i></div>
+                        <h3>Endless Mode</h3>
+                        <p>Beat the boss to unlock Endless Mode, and compete to achieve the highest survival time.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- How to Play Section -->
+    <section class="how-to-play section-padding hidden" id="how-to-play">
+        <div class="container">
+            <div class="section-title">
+                <h2>How to Play</h2>
+                <div class="underline"></div>
+            </div>
+            <div class="controls-grid">
+                <div class="control-card glass">
+                    <div class="key-icon">W A S D</div>
+                    <h3>Movement</h3>
+                    <p>Use the W, A, S, D keys to move your character around the map.</p>
+                </div>
+                <div class="control-card glass">
+                    <div class="key-icon"><i class="fas fa-crosshairs"></i></div>
+                    <h3>Auto Aim & Attack</h3>
+                    <p>Shooting is automatic! Your character will auto-aim and continuously fire bullets at enemies.</p>
+                </div>
+                <div class="control-card glass">
+                    <div class="key-icon">ESC</div>
+                    <h3>Pause Menu</h3>
+                    <p>Press ESC to pause the game and access settings or quit.</p>
+                </div>
+                <div class="control-card glass">
+                    <div class="key-icon"><i class="fas fa-box-open"></i></div>
+                    <h3>Collectibles</h3>
+                    <p>Walk over items to pick up health, weapons, or protective shields.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Team Section -->
+    <section class="team section-padding hidden" id="team">
+        <div class="container">
+            <div class="section-title">
+                <h2>Meet The Team</h2>
+                <div class="underline"></div>
+            </div>
+
+            <div class="leader-section">
+                <div class="team-card leader-card glass">
+                    <div class="card-glow"></div>
+                    <img src="assets/images/ava1.png" alt="Brix Adrian V. Navarro" class="team-avatar leader-avatar">
+                    <div class="member-role">Project Leader & Developer</div>
+                    <h3 class="member-name">Brix Adrian V. Navarro</h3>
+                    <div class="social-links">
+                        <a href="https://github.com/briixx29" target="_blank" title="GitHub"><i
+                                class="fab fa-github"></i></a>
+                        <a href="https://www.facebook.com/Briixx.29/" target="_blank" title="Facebook"><i
+                                class="fab fa-facebook"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <h3 class="members-title">Core Members</h3>
+            <div class="members-grid">
+                <div class="team-card glass">
+                    <img src="assets/images/ava2.png" alt="Paul Renzo Ravanzo" class="team-avatar">
+                    <h4 class="member-name">Paul Renzo Ravanzo</h4>
+                    <span class="member-badge">Member</span>
+                </div>
+                <div class="team-card glass">
+                    <img src="assets/images/ava5.png" alt="John Benedict Ganalongo" class="team-avatar">
+                    <h4 class="member-name">John Benedict Ganalongo</h4>
+                    <span class="member-badge">Member</span>
+                </div>
+                <div class="team-card glass">
+                    <img src="assets/images/ava3.png" alt="Ashley Jaime Tuates" class="team-avatar">
+                    <h4 class="member-name">Ashley Jaime Tuates</h4>
+                    <span class="member-badge">Member</span>
+                </div>
+                <div class="team-card glass">
+                    <img src="assets/images/ava6.png" alt="Ethan Christopher David" class="team-avatar">
+                    <h4 class="member-name">Ethan Christopher David</h4>
+                    <span class="member-badge">Member</span>
+                </div>
+                <div class="team-card glass">
+                    <img src="assets/images/ava4.png" alt="Hendrix Francisco" class="team-avatar">
+                    <h4 class="member-name">Hendrix Francisco</h4>
+                    <span class="member-badge">Member</span>
+                </div>
+                <div class="team-card glass">
+                    <img src="assets/images/ava7.png" alt="Alvin Del Rosario" class="team-avatar">
+                    <h4 class="member-name">Alvin Del Rosario</h4>
+                    <span class="member-badge">Member</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Download Section -->
+    <section class="download section-padding hidden" id="download">
+        <div class="container text-center">
+            <div class="download-box glass">
+                <i class="fas fa-gamepad download-icon"></i>
+                <h2>Ready to Survive?</h2>
+                <p>Download the latest version of Zombie Survival now and test your skills.</p>
+
+                <!-- PLACEHOLDER FOR DOWNLOAD LINK -->
+                <a href="#" class="btn primary-btn pulse-btn large-btn" id="download-link">
+                    Download Game (.zip) <i class="fas fa-download"></i>
+                </a>
+
+                <p class="download-note"><i class="fas fa-info-circle"></i> Place your download link in the code.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <i class="fas fa-biohazard"></i> Zombie Survival
+            </div>
+            <p>&copy; 2026 Brix Adrian V. Navarro & Team. All Rights Reserved.</p>
+            <div class="footer-socials">
+                <a href="https://github.com/briixx29" target="_blank"><i class="fab fa-github"></i></a>
+                <a href="https://www.facebook.com/Briixx.29/" target="_blank"><i class="fab fa-facebook"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
