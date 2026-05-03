@@ -18,11 +18,13 @@
     <!-- Navbar -->
     <nav class="navbar">
         <div class="logo">
-            <i class="fas fa-biohazard"></i> ZS
+            <i class="fas fa-biohazard"></i> Zombie Survival
         </div>
         <ul class="nav-links">
             <li><a href="#about">About</a></li>
             <li><a href="#how-to-play">How to Play</a></li>
+            <li><a href="#technologies">Technologies</a></li>
+            <li><a href="#assets">Assets</a></li>
             <li><a href="#team">The Team</a></li>
         </ul>
         <a href="#download" class="btn download-btn-nav">Download</a>
@@ -36,6 +38,8 @@
         <ul class="mobile-nav-links">
             <li><a href="#about">About</a></li>
             <li><a href="#how-to-play">How to Play</a></li>
+            <li><a href="#technologies">Technologies</a></li>
+            <li><a href="#assets">Assets</a></li>
             <li><a href="#team">The Team</a></li>
             <li><a href="#download" class="btn primary-btn">Download</a></li>
         </ul>
@@ -80,7 +84,8 @@
                     <div class="feature-card">
                         <div class="feature-icon"><i class="fas fa-skull"></i></div>
                         <h3>Endless Hordes</h3>
-                        <p>Survive against ever-growing waves of relentless zombies. The longer you last, the harder it gets.</p>
+                        <p>Survive against ever-growing waves of relentless zombies. The longer you last, the harder it
+                            gets.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon"><i class="fas fa-crosshairs"></i></div>
@@ -95,12 +100,14 @@
                     <div class="feature-card">
                         <div class="feature-icon"><i class="fas fa-map"></i></div>
                         <h3>Dynamic Stages</h3>
-                        <p>Progress through 3 unique environments, use portals to advance, and defeat a challenging final Boss.</p>
+                        <p>Progress through 3 unique environments, use portals to advance, and defeat a challenging
+                            final Boss.</p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon"><i class="fas fa-users"></i></div>
                         <h3>Character Select</h3>
-                        <p>Choose from 7 different playable characters with their own unique avatars before dropping in.</p>
+                        <p>Choose from 7 different playable characters with their own unique avatars before dropping in.
+                        </p>
                     </div>
                     <div class="feature-card">
                         <div class="feature-icon"><i class="fas fa-trophy"></i></div>
@@ -144,6 +151,119 @@
         </div>
     </section>
 
+    <!-- Technologies Section -->
+    <section class="technologies section-padding hidden" id="technologies">
+        <div class="container">
+            <div class="section-title">
+                <h2>Technologies Used</h2>
+                <div class="underline"></div>
+            </div>
+            <div class="controls-grid" style="grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));">
+                <div class="control-card glass">
+                    <div class="key-icon" style="color: #4B8BBE; border-color: rgba(75, 139, 190, 0.4); background: rgba(75, 139, 190, 0.1); font-size: 2rem;"><i class="fab fa-python"></i></div>
+                    <h3>Game Development</h3>
+                    <p>The core Zombie Survival game logic, physics, and rendering are built entirely using <strong>Python</strong> and the Pygame library.</p>
+                </div>
+                <div class="control-card glass">
+                    <div class="key-icon" style="color: #E34F26; border-color: rgba(227, 79, 38, 0.4); background: rgba(227, 79, 38, 0.1); font-size: 1.5rem; gap: 8px;"><i class="fab fa-html5"></i><i class="fab fa-css3-alt" style="color: #1572B6;"></i><i class="fab fa-js" style="color: #F7DF1E;"></i></div>
+                    <h3>Portfolio Website</h3>
+                    <p>This promotional portfolio and showcase website is beautifully crafted using <strong>HTML</strong>, <strong>CSS</strong>, and <strong>JavaScript</strong>.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Game Assets Section -->
+    <section class="assets section-padding hidden" id="assets">
+        <div class="container">
+            <div class="section-title">
+                <h2>Game Assets</h2>
+                <div class="underline"></div>
+            </div>
+
+            <div class="assets-category">
+                <div class="category-header">
+                    <h3>Characters</h3>
+                    <p class="reference">Created by Paul Ravanzo and Benedict Ganalongo</p>
+                </div>
+                <div class="assets-grid chars-grid">
+                    <div class="asset-card glass"><img src="assets/images/char1.png" alt="Character 1"></div>
+                    <div class="asset-card glass"><img src="assets/images/char2.png" alt="Character 2"></div>
+                    <div class="asset-card glass"><img src="assets/images/char3.png" alt="Character 3"></div>
+                    <div class="asset-card glass"><img src="assets/images/char4.png" alt="Character 4"></div>
+                    <div class="asset-card glass"><img src="assets/images/char5.png" alt="Character 5"></div>
+                    <div class="asset-card glass"><img src="assets/images/char6.png" alt="Character 6"></div>
+                    <div class="asset-card glass"><img src="assets/images/char7.png" alt="Character 7"></div>
+                </div>
+            </div>
+
+            <div class="assets-category">
+                <div class="category-header">
+                    <h3>Zombies & Enemies</h3>
+                </div>
+                <div class="assets-grid enemies-grid">
+                    <div class="asset-card glass"><img src="assets/images/zombie.png" alt="Zombie"></div>
+                    <div class="asset-card glass"><img src="assets/images/boss.png" alt="Boss Zombie"></div>
+                </div>
+            </div>
+
+            <div class="assets-category">
+                <div class="category-header">
+                    <h3>Items & Power-ups</h3>
+                    <p class="reference">Assets sourced from <a href="https://www.pngegg.com/"
+                            target="_blank">pngegg.com</a></p>
+                </div>
+                <div class="assets-grid items-grid">
+                    <div class="asset-card glass"><img src="assets/images/heal.png" alt="Heal"></div>
+                    <div class="asset-card glass"><img src="assets/images/gun.png" alt="Gun"></div>
+                    <div class="asset-card glass"><img src="assets/images/shield.png" alt="Shield"></div>
+                    <div class="asset-card glass"><img src="assets/images/speed.png" alt="Speed"></div>
+                    <div class="asset-card glass"><img src="assets/images/ejeep.png" alt="E-Jeep"></div>
+                </div>
+            </div>
+
+            <div class="assets-category">
+                <div class="category-header">
+                    <h3>Maps (Stages 1-3)</h3>
+                    <p class="reference">Created by Brix Navarro</p>
+                </div>
+                <div class="assets-grid maps-grid">
+                    <div class="asset-card glass">
+                        <img src="assets/images/background.png" alt="Stage 1 Map">
+                        <div class="asset-label">Stage 1</div>
+                    </div>
+                    <div class="asset-card glass">
+                        <img src="assets/images/bg2.png" alt="Stage 2 Map">
+                        <div class="asset-label">Stage 2</div>
+                    </div>
+                    <div class="asset-card glass">
+                        <img src="assets/images/bg3.png" alt="Stage 3 Map">
+                        <div class="asset-label">Stage 3</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="assets-category">
+                <div class="category-header">
+                    <h3>Audio & Sound Effects</h3>
+                </div>
+                <div class="assets-grid" style="grid-template-columns: 1fr;">
+                    <div class="asset-card glass" style="flex-direction: row; gap: 20px; align-items: flex-start; justify-content: flex-start; text-align: left; padding: 30px;">
+                        <div class="feature-icon" style="min-width: 50px; height: 50px; font-size: 1.5rem; flex-shrink: 0;"><i class="fas fa-volume-up"></i></div>
+                        <div>
+                            <p class="reference" style="font-size: 1.1rem; margin-bottom: 5px; color: var(--text-main);"><strong>Main Game Soundtrack</strong></p>
+                            <p class="reference" style="margin-bottom: 15px;">Inspired by and sourced from the <strong>Zombie Tsunami</strong> game.</p>
+                            
+                            <p class="reference" style="font-size: 1.1rem; margin-bottom: 5px; color: var(--text-main);"><strong>Additional Sound Effects (SFX)</strong></p>
+                            <p class="reference">All other sound effects are high-quality assets sourced from <a href="https://pixabay.com/sound-effects/search/wav/" target="_blank">Pixabay</a>.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </section>
+
     <!-- Team Section -->
     <section class="team section-padding hidden" id="team">
         <div class="container">
@@ -173,31 +293,49 @@
                     <img src="assets/images/ava2.png" alt="Paul Renzo Ravanzo" class="team-avatar">
                     <h4 class="member-name">Paul Renzo Ravanzo</h4>
                     <span class="member-badge">Member</span>
+                    <div class="social-links" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com/paulrenxo" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    </div>
                 </div>
                 <div class="team-card glass">
                     <img src="assets/images/ava5.png" alt="John Benedict Ganalongo" class="team-avatar">
                     <h4 class="member-name">John Benedict Ganalongo</h4>
                     <span class="member-badge">Member</span>
+                    <div class="social-links" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com/ben.tralalelotropalang" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    </div>
                 </div>
                 <div class="team-card glass">
                     <img src="assets/images/ava3.png" alt="Ashley Jaime Tuates" class="team-avatar">
                     <h4 class="member-name">Ashley Jaime Tuates</h4>
                     <span class="member-badge">Member</span>
+                    <div class="social-links" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com/ashleyjaime.tuates#" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    </div>
                 </div>
                 <div class="team-card glass">
                     <img src="assets/images/ava6.png" alt="Ethan Christopher David" class="team-avatar">
                     <h4 class="member-name">Ethan Christopher David</h4>
                     <span class="member-badge">Member</span>
+                    <div class="social-links" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com/profile.php?id=61577015818288#" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    </div>
                 </div>
                 <div class="team-card glass">
                     <img src="assets/images/ava4.png" alt="Hendrix Francisco" class="team-avatar">
                     <h4 class="member-name">Hendrix Francisco</h4>
                     <span class="member-badge">Member</span>
+                    <div class="social-links" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com/franciscodrix" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    </div>
                 </div>
                 <div class="team-card glass">
                     <img src="assets/images/ava7.png" alt="Alvin Del Rosario" class="team-avatar">
                     <h4 class="member-name">Alvin Del Rosario</h4>
                     <span class="member-badge">Member</span>
+                    <div class="social-links" style="margin-top: 15px;">
+                        <a href="https://www.facebook.com/alvin.delrosario.790256" target="_blank" title="Facebook"><i class="fab fa-facebook"></i></a>
+                    </div>
                 </div>
             </div>
         </div>
@@ -211,12 +349,11 @@
                 <h2>Ready to Survive?</h2>
                 <p>Download the latest version of Zombie Survival now and test your skills.</p>
 
-                <!-- PLACEHOLDER FOR DOWNLOAD LINK -->
-                <a href="#" class="btn primary-btn pulse-btn large-btn" id="download-link">
-                    Download Game (.zip) <i class="fas fa-download"></i>
+                <a href="https://briixx29.itch.io/zombie-survival" target="_blank" class="btn primary-btn pulse-btn large-btn" id="download-link">
+                    Play on Itch.io <i class="fas fa-gamepad"></i>
                 </a>
 
-                <p class="download-note"><i class="fas fa-info-circle"></i> Place your download link in the code.</p>
+                <p class="download-note"><i class="fas fa-info-circle"></i> Available now for Windows!</p>
             </div>
         </div>
     </section>
@@ -227,7 +364,7 @@
             <div class="footer-logo">
                 <i class="fas fa-biohazard"></i> Zombie Survival
             </div>
-            <p>&copy; 2026 Brix Adrian V. Navarro & Team. All Rights Reserved.</p>
+            <p>&copy; 2026 Brix Adrian Navarro & Team. All Rights Reserved.</p>
             <div class="footer-socials">
                 <a href="https://github.com/briixx29" target="_blank"><i class="fab fa-github"></i></a>
                 <a href="https://www.facebook.com/Briixx.29/" target="_blank"><i class="fab fa-facebook"></i></a>
